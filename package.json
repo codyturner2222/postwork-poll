@@ -1,0 +1,16 @@
+{
+  "name": "postwork-poll",
+  "version": "1.0.0",
+  "description": "Live polls, a human-or-machine poem reveal, and a job audit for FDS 100-6, Meaningful Work and Play in a Post-Work World",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

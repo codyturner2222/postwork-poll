@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Meaningful Work: Live Poll</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #1a2233;
+    --panel2: #232d42;
+    --ink: #eef2fb;
+    --muted: #9aa7c2;
+    --line: #33405c;
+    --accent: #6ea8fe;
+    --good: #33b16b;
+    --warn: #e0a13a;
+    --ai: #d98a4e;
+    --human: #5fb6a3;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .hidden { display: none !important; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ---------------- Landing ---------------- */
+  #landing {
+    min-height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 28px; padding: 24px; text-align: center;
+  }
+  #landing h1 { font-size: 30px; margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px; width: 100%; max-width: 400px;
+  }
+  .card h2 { margin: 0 0 12px; font-size: 18px; }
+  input[type=text] {
+    width: 100%; padding: 16px; font-size: 22px; text-align: center; letter-spacing: 6px;
+    text-transform: uppercase; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--ink); margin-bottom: 12px; font-weight: 700;
+  }
+  .btn {
+    width: 100%; padding: 16px; font-size: 18px; font-weight: 700; border-radius: 12px;
+    border: none; background: var(--accent); color: #06122b;
+  }
+  .btn:disabled { opacity: .45; }
+  .btn.secondary { background: var(--panel2); color: var(--ink); border: 1px solid var(--line); }
+  .btn:active { transform: translateY(1px); }
+  .err { color: #ff8080; font-size: 14px; min-height: 18px; margin-top: 4px; }
+  .hosthint { font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .linkish { background: none; border: none; color: var(--muted); text-decoration: underline; font-size: 14px; }
+
+  /* ---------------- Presenter ---------------- */
+  #host { min-height: 100%; display: flex; flex-direction: column; height: 100%; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 26px; border-bottom: 1px solid var(--line); background: #0b1019;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .join-info { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  .join-info .lbl { color: var(--muted); font-size: 15px; }
+  .code {
+    font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #fff;
+    background: var(--panel2); padding: 2px 16px; border-radius: 10px; border: 1px solid var(--line);
+  }
+  .url { font-size: 20px; color: var(--accent); font-weight: 600; }
+  .counter { font-size: 18px; color: var(--muted); white-space: nowrap; }
+  .counter b { color: var(--ink); font-size: 22px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .newroom-btn { background: var(--panel2); border: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 8px 14px; border-radius: 9px; white-space: nowrap; }
+  .newroom-btn:hover { color: var(--ink); border-color: var(--accent); }
+
+  .stage {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding: 18px min(5vw, 60px); gap: 14px; max-width: 1400px; margin: 0 auto; width: 100%;
+    overflow-y: auto; min-height: 0;
+  }
+  /* Results and the longer activities start at the top so everything fits. */
+  #host.top .stage { justify-content: flex-start; }
+  .section-tag {
+    align-self: flex-start; text-transform: uppercase; letter-spacing: 2px; font-size: 15px;
+    color: var(--accent); font-weight: 700; background: rgba(110,168,254,0.12);
+    padding: 6px 14px; border-radius: 999px;
+  }
+  .stagelabel { color: var(--warn); font-weight: 700; font-size: 20px; }
+  .context {
+    background: var(--panel); border-left: 4px solid var(--warn); border-radius: 10px;
+    padding: 14px 20px; font-size: clamp(18px, 2vw, 25px); line-height: 1.4; color: #f4e9d4;
+  }
+  .question { font-size: clamp(24px, 3.1vw, 40px); font-weight: 800; line-height: 1.18; letter-spacing: -0.5px; }
+  #host.top .question { font-size: clamp(20px, 2.4vw, 30px); }
+
+  .voting-note { display: flex; align-items: center; gap: 16px; font-size: 22px; color: var(--muted); margin-top: 4px; flex-wrap: wrap; }
+  .pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 10px 20px; font-size: 21px; }
+  .pill b { color: #fff; }
+  .dots { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--good); animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+
+  .bars { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .bar-row { display: flex; flex-direction: column; gap: 6px; }
+  .bar-top { display: flex; justify-content: space-between; align-items: baseline; font-size: clamp(17px,1.7vw,22px); }
+  .bar-label { font-weight: 600; }
+  .bar-val { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar-val b { color: var(--ink); font-size: 1.25em; }
+  .track { height: 26px; background: var(--panel2); border-radius: 8px; overflow: hidden; }
+  .fill { height: 100%; width: 0; border-radius: 8px; transition: width .6s cubic-bezier(.22,.61,.36,1); }
+
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; }
+  .box h3 { margin: 0 0 12px; font-size: 16px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 10px; padding: 12px 26px;
+    border-top: 1px solid var(--line); background: #0b1019; flex-wrap: wrap;
+  }
+  .controls .grow { flex: 1; }
+  .ctrl {
+    padding: 12px 20px; font-size: 17px; font-weight: 700; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--ink);
+  }
+  .ctrl.primary { background: var(--good); color: #04140a; border-color: transparent; }
+  .ctrl.reveal { background: var(--accent); color: #06122b; border-color: transparent; }
+  .ctrl.step { background: var(--warn); color: #201400; border-color: transparent; }
+  .ctrl.slim { padding: 9px 13px; font-size: 14px; }
+  .ctrl.slim.on { border-color: var(--accent); background: rgba(110,168,254,0.18); }
+  .ctrl:disabled { opacity: .4; cursor: default; }
+  .ctrl.menu { background: var(--accent); color: #06122b; border-color: transparent; }
+  .nowplaying { color: var(--muted); font-size: 14px; }
+  .speaker-note { color: var(--warn); font-size: 14px; max-width: 460px; line-height: 1.35; }
+  .toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  /* The poem and results screens drop the chrome they don't need. */
+  #host.poems #hSection, #host.poems #hVotingNote { display: none; }
+  #host.results #hSection { display: none; }
+  .statgrid.compact .stat { padding: 10px 18px; }
+  .statgrid.compact .big { font-size: clamp(26px, 3vw, 38px); }
+  .statgrid.compact .arrow { font-size: 22px; }
+  .statgrid.compact .delta { font-size: 16px; padding: 2px 10px; }
+  .statgrid.compact .ssub { display: none; }
+  .statgrid.compact .snums { margin-top: 4px; }
+  .ghost { height: 6px; margin-top: 3px; background: transparent; border-radius: 4px; overflow: hidden; }
+  .ghost div { height: 100%; background: var(--muted); opacity: .55; border-radius: 4px; }
+  .bar-val .was { color: var(--muted); font-size: .85em; margin-right: 6px; }
+
+  /* Question picker overlay */
+  #menu { position: fixed; inset: 0; background: rgba(6,10,18,0.72); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .menu-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; width: 100%; max-width: 780px; max-height: 86vh; display: flex; flex-direction: column; overflow: hidden; }
+  .menu-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 6px; }
+  .menu-head h2 { margin: 0; font-size: 22px; }
+  .menu-close { background: var(--panel2); border: 1px solid var(--line); color: var(--ink); font-size: 18px; width: 40px; height: 40px; border-radius: 10px; }
+  .menu-hint { color: var(--muted); font-size: 14px; margin: 0 22px 10px; }
+  #menuList { overflow-y: auto; padding: 4px 14px 16px; }
+  .menu-section { color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; font-size: 13px; font-weight: 700; margin: 16px 8px 8px; }
+  .menu-item { width: 100%; text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 13px 16px; margin-bottom: 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel2); color: var(--ink); }
+  .menu-item:hover { border-color: var(--accent); }
+  .menu-item.active { border-color: var(--accent); background: rgba(110,168,254,0.16); }
+  .menu-item .mnum { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 7px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); font-weight: 700; }
+  .menu-item.done .mnum { background: var(--good); color: #04140a; }
+  .menu-item .mbody { flex: 1; min-width: 0; }
+  .menu-item .mtitle { display: block; font-weight: 700; font-size: 16px; }
+  .menu-item .msub { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; line-height: 1.35; }
+
+  /* ---------------- Poems (presenter) ---------------- */
+  .poemgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .poemcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 22px; }
+  .poemcard h4 { margin: 0 0 10px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .poemtext { font-family: Georgia, "Times New Roman", serif; font-size: clamp(15px, 1.45vw, 20px); line-height: 1.42; }
+  .stanza { white-space: pre-line; margin-bottom: .55em; }
+  .stanza:last-child { margin-bottom: 0; }
+  .author { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: clamp(14px, 1.3vw, 18px); font-weight: 700; }
+  .author.ai { color: var(--ai); }
+  .author.human { color: var(--human); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; margin-right: 8px; color: #10151f; }
+  .tag.ai { background: var(--ai); }
+  .tag.human { background: var(--human); }
+
+  .statgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; }
+  .stat .slabel { font-size: clamp(15px, 1.4vw, 19px); color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .stat .snums { display: flex; align-items: baseline; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+  .stat .big { font-size: clamp(40px, 5vw, 66px); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .arrow { font-size: clamp(26px, 3vw, 40px); color: var(--muted); }
+  .stat .was { color: var(--muted); }
+  .stat .delta { font-size: clamp(18px, 1.9vw, 26px); font-weight: 800; padding: 4px 12px; border-radius: 999px; background: var(--panel2); }
+  .stat .delta.down { color: #ff9c8a; }
+  .stat .delta.up { color: #7ee0a5; }
+  .stat .ssub { margin-top: 8px; color: var(--muted); font-size: clamp(14px, 1.3vw, 18px); }
+  .takeaway { font-size: clamp(18px, 1.9vw, 25px); line-height: 1.4; }
+  .takeaway b { color: var(--warn); }
+
+  .rows { display: flex; flex-direction: column; gap: 9px; }
+  .row3 { display: grid; grid-template-columns: minmax(180px, 300px) 1fr 150px; gap: 14px; align-items: center; font-size: clamp(15px, 1.5vw, 20px); }
+  .row3 .rt { height: 20px; background: var(--panel2); border-radius: 6px; overflow: hidden; }
+  .row3 .rt div { height: 100%; border-radius: 6px; transition: width .6s; }
+  .row3 .rv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .row3 .rv small { color: var(--muted); font-weight: 500; }
+  .caption { color: var(--muted); font-size: clamp(13px, 1.2vw, 16px); line-height: 1.4; margin-top: 10px; }
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .tasklist { display: flex; flex-direction: column; gap: 7px; font-size: clamp(14px, 1.3vw, 18px); }
+  .tasklist div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  .tasklist small { color: var(--muted); }
+  .tasklist b { white-space: nowrap; }
+  .howto { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .howto div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; font-size: clamp(16px, 1.6vw, 21px); line-height: 1.35; }
+  .howto b { display: block; color: var(--accent); font-size: .8em; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+
+  /* ---------------- Student ---------------- */
+  #part { min-height: 100%; display: flex; flex-direction: column; }
+  .part-head { padding: 12px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); }
+  .part-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; gap: 16px; }
+  .part-body.scroll { justify-content: flex-start; }
+  #pPollWrap { display: flex; flex-direction: column; gap: 16px; }
+  .part-context { color: var(--warn); font-size: 16px; line-height: 1.45; }
+  .part-q { font-size: 23px; font-weight: 800; line-height: 1.25; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .opt {
+    width: 100%; text-align: left; padding: 17px 20px; font-size: 18px; font-weight: 600;
+    border-radius: 14px; border: 2px solid var(--line); background: var(--panel); color: var(--ink);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .opt.chosen { border-color: var(--accent); background: rgba(110,168,254,0.16); }
+  .opt .tick { opacity: 0; font-weight: 800; color: var(--accent); }
+  .opt.chosen .tick { opacity: 1; }
+  .opt .rpct { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .status { text-align: center; color: var(--muted); font-size: 16px; line-height: 1.5; }
+  .status.ok { color: var(--good); font-weight: 600; }
+  .waiting { text-align: center; color: var(--muted); font-size: 20px; padding: 40px 0; }
+  .spin { display:inline-block; width:14px;height:14px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite;margin-right:8px; }
+
+  .pcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .pcard h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .pcard .poemtext { font-size: 16px; line-height: 1.45; }
+  .ptask { font-weight: 700; font-size: 16px; line-height: 1.3; margin-bottom: 10px; }
+  .pwas { color: var(--muted); font-size: 13px; margin: -4px 0 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .chips.three .chip { padding: 11px 2px; font-size: 13.5px; text-align: center; white-space: nowrap; }
+  .chip { padding: 11px 13px; font-size: 15px; font-weight: 600; border-radius: 999px; border: 2px solid var(--line); background: var(--panel2); color: var(--ink); }
+  .chip.chosen { border-color: var(--accent); background: rgba(110,168,254,0.2); }
+  .banner { background: rgba(224,161,58,0.14); border: 1px solid var(--warn); color: #f4e9d4; border-radius: 12px; padding: 12px 14px; font-size: 16px; line-height: 1.4; font-weight: 600; }
+  .sval { font-size: 22px; font-weight: 800; color: var(--accent); margin: 10px 0 2px; }
+  .sval.unset { color: var(--muted); font-size: 15px; font-weight: 600; }
+  .srange { width: 100%; accent-color: var(--accent); height: 34px; }
+  .srange.unset { opacity: .45; }
+  .sends { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; }
+  .plabel { font-weight: 700; font-size: 17px; line-height: 1.3; }
+  .psum { font-size: 16px; line-height: 1.5; }
+  .psum b { color: var(--accent); }
+  .psum ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); }
+
+  /* Shorter projector windows: tighten the poems so both fit without scrolling. */
+  @media (max-height: 800px) {
+    .poemtext { font-size: 14px; line-height: 1.3; }
+    .stanza { margin-bottom: .4em; }
+    .poemcard { padding: 12px 18px; }
+    .poemcard h4 { margin-bottom: 6px; }
+    .author { margin-top: 8px; padding-top: 8px; font-size: 14px; }
+  }
+  @media (max-width: 900px) {
+    .poemgrid, .statgrid, .twocol, .howto { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LANDING ================= -->
+<div id="landing">
+  <div>
+    <h1>Meaningful Work<br /><span style="color:var(--muted);font-weight:600;font-size:20px;">Live Poll</span></h1>
+  </div>
+  <div class="card">
+    <h2>Join the room</h2>
+    <input id="codeInput" type="text" maxlength="6" placeholder="CODE" autocomplete="off" />
+    <div class="err" id="joinErr"></div>
+    <button class="btn" id="joinBtn">Join</button>
+  </div>
+  <div>
+    <button class="linkish" id="hostToggle">I'm the presenter →</button>
+  </div>
+  <div class="card hidden" id="hostCard">
+    <h2>Presenter</h2>
+    <p class="hosthint" style="margin:0 0 14px;">Open this on the screen you'll project. Students join on their phones with the room code.</p>
+    <input id="customCode" type="text" maxlength="6" placeholder="ROOM CODE (optional)" autocomplete="off" style="letter-spacing:4px;" />
+    <div class="err" id="createErr"></div>
+    <button class="btn" id="createBtn">Start a new room</button>
+    <p class="hosthint" style="margin:10px 0 0;">Leave the code blank for a random one, or type your own (3 to 6 letters or numbers) to set it in advance.</p>
+  </div>
+</div>
+
+<!-- ================= PRESENTER ================= -->
+<div id="host" class="hidden">
+  <div class="topbar">
+    <div class="join-info">
+      <span class="lbl">Join at</span><span class="url" id="hUrl">—</span>
+      <span class="lbl">Code</span><span class="code" id="hCode">----</span>
+    </div>
+    <div class="topbar-right">
+      <div class="counter"><b id="hVoted">0</b> of <b id="hPart">0</b> <span id="hVerb">voted</span></div>
+      <button class="newroom-btn" id="cNewRoom" title="Start a fresh room with all answers cleared">⟳ New room</button>
+    </div>
+  </div>
+
+  <div class="stage" id="hStage">
+    <div class="section-tag" id="hSection">Ready</div>
+    <div class="stagelabel hidden" id="hStageLabel"></div>
+    <div class="context hidden" id="hContext"></div>
+    <div class="question" id="hQuestion"></div>
+    <div class="voting-note hidden" id="hVotingNote"></div>
+    <div id="hBody"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl menu" id="cMenu">☰ Questions</button>
+    <button class="ctrl" id="cPrev">◀ Prev</button>
+    <button class="ctrl primary" id="cNext">Start ▶</button>
+    <button class="ctrl step hidden" id="cStep">Next step ▶</button>
+    <button class="ctrl reveal" id="cReveal">Reveal results</button>
+    <button class="ctrl" id="cReset">Reset</button>
+    <div class="grow"></div>
+    <div>
+      <div class="nowplaying" id="cNow">—</div>
+      <div class="speaker-note" id="cNote"></div>
+    </div>
+  </div>
+
+  <div id="menu" class="hidden">
+    <div class="menu-panel">
+      <div class="menu-head">
+        <h2>Jump to any question</h2>
+        <button class="menu-close" id="menuClose">✕</button>
+      </div>
+      <p class="menu-hint">Pick any question in any order. A ✓ marks ones you've already opened.</p>
+      <div id="menuList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STUDENT ================= -->
+<div id="part" class="hidden">
+  <div class="part-head">
+    <span>Room <b id="pCode">----</b></span>
+    <span>Anonymous</span>
+  </div>
+  <div class="part-body" id="pBody">
+    <div class="waiting" id="pWaiting"><span class="spin"></span>Waiting for the presenter to start…</div>
+    <div class="hidden" id="pPollWrap">
+      <div class="part-context hidden" id="pContext"></div>
+      <div class="part-q" id="pQuestion"></div>
+      <div class="options" id="pOptions"></div>
+      <div class="status" id="pStatus"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pct = (c, t) => (t > 0 ? Math.round((c / t) * 100) : 0);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+
+// A stable id kept on the phone, so a phone that sleeps and reconnects keeps
+// one set of answers.
+let voterId;
+try {
+  voterId = sessionStorage.getItem('pw_vid');
+  if (!voterId) {
+    voterId = 'v-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('pw_vid', voterId);
+  }
+} catch (e) {
+  voterId = 'v-' + Math.random().toString(36).slice(2);
+}
+
+const BINARY_COLORS = ['#3aa0d1', '#e0a13a'];
+const YESNO_COLORS = { yes: '#2f9e44', no: '#d7263d' };
+const MULTI_COLORS = ['#3aa0d1', '#e0a13a', '#8b7fd1', '#4c9f70', '#d75f9a'];
+function colorFor(poll, optId, idx) {
+  if (YESNO_COLORS[optId]) return YESNO_COLORS[optId];
+  if (poll.kind === 'binary') return BINARY_COLORS[idx % 2];
+  return MULTI_COLORS[idx % MULTI_COLORS.length];
+}
+function poemHtml(text) {
+  return '<div class="poemtext">' + text.split('\n\n').map((s) => '<div class="stanza">' + esc(s) + '</div>').join('') + '</div>';
+}
+
+// =====================================================================
+// ROLE ROUTING
+// =====================================================================
+let POLLS = [];
+let roomCode = null;
+
+function show(view) {
+  ['landing', 'host', 'part'].forEach((v) => $(v).classList.toggle('hidden', v !== view));
+}
+function clearSession() {
+  try { sessionStorage.removeItem('pw_role'); sessionStorage.removeItem('pw_code'); } catch (e) {}
+}
+
+// ---- Landing ----
+$('hostToggle').onclick = () => $('hostCard').classList.toggle('hidden');
+$('codeInput').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+$('joinBtn').onclick = doJoin;
+$('codeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
+try {
+  const pre = new URLSearchParams(location.search).get('room');
+  if (pre) $('codeInput').value = pre.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+} catch (e) {}
+
+function doJoin() {
+  const code = $('codeInput').value.trim().toUpperCase();
+  if (code.length < 3) { $('joinErr').textContent = 'Enter the room code.'; return; }
+  socket.emit('participant:join', { code, voterId }, (res) => {
+    if (!res || res.error) { $('joinErr').textContent = (res && res.error) || 'Could not join.'; return; }
+    roomCode = code;
+    $('pCode').textContent = code;
+    try { sessionStorage.setItem('pw_role', 'vote'); sessionStorage.setItem('pw_code', code); } catch (e) {}
+    show('part');
+    if (res.active) renderParticipantPoll(res.active);
+    else showWaiting();
+  });
+}
+
+// =====================================================================
+// PRESENTER
+// =====================================================================
+$('customCode').addEventListener('input', (e) => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+});
+$('createBtn').onclick = () => {
+  const wanted = $('customCode').value.trim();
+  socket.emit('host:create', { code: wanted }, (res) => {
+    if (!res || res.error) { $('createErr').textContent = (res && res.error) || 'Could not start room.'; return; }
+    POLLS = res.polls; roomCode = res.code;
+    try { sessionStorage.setItem('pw_role', 'host'); sessionStorage.setItem('pw_code', res.code); } catch (e) {}
+    setupHost(res.code);
+  });
+};
+
+function setupHost(code) {
+  $('hCode').textContent = code;
+  $('hUrl').textContent = location.host;
+  $('hVoted').textContent = '0';
+  $('hPart').textContent = '0';
+  show('host');
+  hostIndex = -1;
+  renderHostIdle();
+}
+
+$('cNewRoom').onclick = () => {
+  if (!confirm('Start a brand-new room?\n\nThis clears ALL answers and gives you a new room code. Anyone already joined will need to rejoin with the new code.')) return;
+  socket.emit('host:create', {}, (res) => {
+    if (!res || res.error) { alert((res && res.error) || 'Could not start a new room.'); return; }
+    POLLS = res.polls; roomCode = res.code;
+    visited.clear();
+    try { sessionStorage.setItem('pw_role', 'host'); sessionStorage.setItem('pw_code', res.code); } catch (e) {}
+    setupHost(res.code);
+  });
+};
+
+let hostIndex = -1;
+let lastPoll = null, lastState = null;
+// Which optional detail panels are open on the current question.
+let open = {};
+
+$('cNext').onclick = () => activate(hostIndex + 1);
+$('cPrev').onclick = () => activate(hostIndex - 1);
+$('cReveal').onclick = () => socket.emit('host:reveal');
+$('cReset').onclick = () => { if (confirm('Clear all answers for this question?')) socket.emit('host:reset'); };
+$('cStep').onclick = () => {
+  if (!lastPoll || lastPoll.kind !== 'poems') return;
+  const next = (lastState.step || 0) + 1;
+  if (next < lastPoll.steps.length) socket.emit('host:step', { step: next });
+};
+
+function activate(i) {
+  if (i < 0 || i >= POLLS.length) return;
+  socket.emit('host:activate', { index: i });
+}
+
+// ---- Question picker ----
+const visited = new Set();
+const shorten = (s, n) => (s && s.length > n ? s.slice(0, n - 1) + '…' : (s || ''));
+
+function menuLabel(poll) {
+  if (poll.kind === 'audit') return { title: 'Job audit', sub: 'Pick a career and sort its tasks, for today\'s AI and for a perfect AI' };
+  if (poll.kind === 'poems') return { title: (poll.stageLabel ? poll.stageLabel + ': ' : '') + 'Rate two poems, guess the machine, rate again', sub: shorten(poll.poems.a.text.split('\n')[0] + ' / ' + poll.poems.b.text.split('\n')[0], 90) };
+  return { title: (poll.stageLabel ? poll.stageLabel + ': ' : '') + shorten(poll.question, 78), sub: shorten(poll.context || '', 90) };
+}
+
+function buildMenu() {
+  const list = $('menuList');
+  list.innerHTML = '';
+  // One header per section.
+  const order = [];
+  POLLS.forEach((p) => { if (!order.includes(p.section)) order.push(p.section); });
+  order.forEach((sec) => {
+    const h = el('div', 'menu-section'); h.textContent = sec; list.appendChild(h);
+    POLLS.forEach((poll, i) => {
+      if (poll.section !== sec) return;
+      const { title, sub } = menuLabel(poll);
+      const done = visited.has(i);
+      const item = el('button', 'menu-item' + (i === hostIndex ? ' active' : '') + (done ? ' done' : ''),
+        '<span class="mnum">' + (done ? '✓' : i + 1) + '</span>' +
+        '<span class="mbody"><span class="mtitle">' + esc(title) + '</span>' +
+        (sub ? '<span class="msub">' + esc(sub) + '</span>' : '') + '</span>');
+      item.onclick = () => { activate(i); closeMenu(); };
+      list.appendChild(item);
+    });
+  });
+}
+function openMenu() { buildMenu(); $('menu').classList.remove('hidden'); }
+function closeMenu() { $('menu').classList.add('hidden'); }
+$('cMenu').onclick = openMenu;
+$('menuClose').onclick = closeMenu;
+$('menu').addEventListener('click', (e) => { if (e.target.id === 'menu') closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+
+function renderHostIdle() {
+  $('host').classList.remove('top', 'poems', 'results');
+  $('hSection').textContent = 'Ready';
+  $('hQuestion').innerHTML = 'Click <b>☰ Questions</b> to pick any question in any order, or <b>Start ▶</b> to begin with the first.';
+  ['hStageLabel', 'hContext', 'hVotingNote', 'cStep'].forEach((id) => $(id).classList.add('hidden'));
+  $('hBody').innerHTML = '';
+  $('cNow').textContent = POLLS.length + ' questions loaded';
+  $('cNote').textContent = '';
+  $('cNext').textContent = 'Start ▶';
+  $('hVerb').textContent = 'voted';
+}
+
+socket.on('host:state', (st) => {
+  hostIndex = st.activeIndex;
+  if (st.activeIndex >= 0) visited.add(st.activeIndex);
+  $('hVoted').textContent = st.votedCount || 0;
+  $('hPart').textContent = st.participantCount || 0;
+  if (st.activeIndex < 0) { renderHostIdle(); return; }
+  renderHostPoll(POLLS[st.activeIndex], st);
+});
+
+// Optional detail buttons. Results stay simple until the presenter opens one.
+// With `oneAtATime`, opening a panel closes the others so the screen stays uncluttered.
+function toggleRow(defs, oneAtATime) {
+  const wrap = el('div', 'toggles');
+  defs.forEach(([key, label]) => {
+    const b = el('button', 'ctrl slim' + (open[key] ? ' on' : ''));
+    b.textContent = (open[key] ? 'Hide ' : 'Show ') + label;
+    b.onclick = () => {
+      const was = !!open[key];
+      if (oneAtATime) open = {};
+      open[key] = !was;
+      renderHostPoll(lastPoll, lastState);
+    };
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+const anyOpen = () => Object.keys(open).some((k) => open[k]);
+function votingNote(html) {
+  const n = $('hVotingNote');
+  if (!html) { n.classList.add('hidden'); return; }
+  n.innerHTML = '<span class="pill"><span class="dots"></span>&nbsp; ' + html + '</span>';
+  n.classList.remove('hidden');
+}
+
+function renderHostPoll(poll, st) {
+  if (!lastPoll || lastPoll.id !== poll.id) open = {};
+  lastPoll = poll; lastState = st;
+
+  $('cNext').textContent = hostIndex >= POLLS.length - 1 ? 'End' : 'Next ▶';
+  $('cPrev').disabled = hostIndex <= 0;
+  $('cNext').disabled = hostIndex >= POLLS.length - 1;
+  $('cNow').textContent = 'Q' + (hostIndex + 1) + '/' + POLLS.length + ' · ' + poll.section;
+  $('cNote').textContent = poll.note || '';
+  $('hSection').textContent = poll.section;
+  $('hQuestion').textContent = poll.question;
+  $('hContext').textContent = poll.context || '';
+  $('hContext').classList.toggle('hidden', !poll.context);
+  $('hStageLabel').textContent = poll.stageLabel || '';
+  $('hStageLabel').classList.toggle('hidden', !poll.stageLabel);
+  $('cStep').classList.add('hidden');
+  $('hVerb').textContent = 'voted';
+  $('host').classList.toggle('top', !!st.revealed || poll.kind === 'poems' || poll.kind === 'audit');
+  $('host').classList.toggle('poems', poll.kind === 'poems');
+  $('host').classList.toggle('results', !!st.revealed && (poll.kind === 'poems' || poll.kind === 'audit'));
+
+  const body = $('hBody');
+  body.innerHTML = '';
+
+  if (poll.kind === 'poems') return renderHostPoems(poll, st, body);
+  if (poll.kind === 'audit') return renderHostAudit(poll, st, body);
+
+  if (!st.revealed) { votingNote('Voting open. Results are hidden.'); return; }
+  votingNote(null);
+  // A revote shows the earlier result under each bar.
+  const before = poll.compareWith && st.compare && st.compare.total ? st.compare : null;
+  if (before) $('hContext').classList.add('hidden');
+  body.appendChild(barsFor(poll, st.tally, before));
+  if (before) {
+    const labels = poll.compareLabels || ['First vote', 'Now'];
+    body.appendChild(el('div', 'caption', 'Thick bar: ' + esc(labels[1].toLowerCase()) + '. Thin bar: ' + esc(labels[0].toLowerCase()) + '.'));
+  }
+}
+
+function barsFor(poll, tally, before) {
+  const wrap = el('div', 'bars');
+  const total = tally.total || 0;
+  poll.options.forEach((o, idx) => {
+    const c = (tally.counts && tally.counts[o.id]) || 0;
+    const p = pct(c, total);
+    const was = before ? pct((before.counts && before.counts[o.id]) || 0, before.total) : null;
+    const row = el('div', 'bar-row',
+      '<div class="bar-top"><span class="bar-label">' + esc(o.label) + '</span>' +
+      '<span class="bar-val">' + (before ? '<span class="was">' + was + '% →</span>' : '') + '<b>' + p + '%</b> · ' + c + '</span></div>' +
+      '<div><div class="track"><div class="fill" style="background:' + colorFor(poll, o.id, idx) + '"></div></div>' +
+      (before ? '<div class="ghost"><div style="width:' + was + '%"></div></div>' : '') + '</div>');
+    wrap.appendChild(row);
+    requestAnimationFrame(() => { row.querySelector('.fill').style.width = p + '%'; });
+  });
+  return wrap;
+}
+
+// ---- Poems ----
+function signed(x) { return (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(1); }
+
+function renderHostPoems(poll, st, body) {
+  const step = st.step || 0;
+  const t = st.tally;
+  $('hVerb').textContent = 'answered';
+  $('hQuestion').textContent = [
+    'Rate each poem from 1 to 10 on your phone.',
+    'One of these poems was written by an AI. Which one?',
+    'Now that you know who wrote them, rate each poem again.',
+  ][step];
+  $('hStageLabel').textContent = (poll.stageLabel ? poll.stageLabel + ' · ' : '') + 'Step ' + (step + 1) + ' of ' + poll.steps.length;
+  $('hStageLabel').classList.remove('hidden');
+  const stepBtn = $('cStep');
+  stepBtn.classList.toggle('hidden', st.revealed || step >= poll.steps.length - 1);
+  stepBtn.textContent = step === 0 ? 'Next step: guess ▶' : 'Next step: reveal authors ▶';
+
+  const poems = () => {
+    const grid = el('div', 'poemgrid');
+    ['a', 'b'].forEach((k) => {
+      let html = '<h4>Poem ' + k.toUpperCase() + '</h4>' + poemHtml(poll.poems[k].text);
+      if (st.authors) {
+        const isAi = st.authors.ai === k;
+        html += '<div class="author ' + (isAi ? 'ai' : 'human') + '"><span class="tag ' + (isAi ? 'ai' : 'human') + '">' + (isAi ? 'AI' : 'Human') + '</span>' + esc(st.authors[k]) + '</div>';
+      }
+      grid.appendChild(el('div', 'poemcard', html));
+    });
+    return grid;
+  };
+
+  if (!st.revealed) {
+    votingNote(null);
+    body.appendChild(poems());
+    return;
+  }
+
+  // ---- Results ----
+  votingNote(null);
+  $('hQuestion').textContent = 'Did knowing who wrote them change how good they are?';
+  $('hStageLabel').classList.add('hidden');
+  if (!t.ratedFirst) { body.appendChild(el('div', 'takeaway', 'No ratings yet.')); return; }
+
+  const grid = el('div', 'statgrid' + (open.poems ? ' compact' : ''));
+  const block = (label, cls, before, after) => {
+    let nums;
+    if (after == null) nums = '<span class="big">' + before.toFixed(1) + '</span>';
+    else {
+      const d = Math.round((after - before) * 10) / 10;
+      nums = '<span class="big was">' + before.toFixed(1) + '</span><span class="arrow">→</span><span class="big">' + after.toFixed(1) + '</span>' +
+        '<span class="delta ' + (d < 0 ? 'down' : d > 0 ? 'up' : '') + '">' + signed(d) + '</span>';
+    }
+    return el('div', 'stat', '<div class="slabel"><span class="tag ' + cls + '">' + (cls === 'ai' ? 'AI' : 'Human') + '</span>' + label + '</div>' +
+      '<div class="snums">' + nums + '</div>' +
+      '<div class="ssub">Average rating out of 10' + (after == null ? '' : ', before and after the reveal') + '</div>');
+  };
+  grid.appendChild(block("The AI's poem", 'ai', t.aiBefore, t.aiAfter));
+  grid.appendChild(block("The human's poem", 'human', t.humanBefore, t.humanAfter));
+  body.appendChild(grid);
+
+  const line = el('div', 'takeaway');
+  line.style.marginTop = '14px';
+  let txt = '';
+  if (t.guessed) txt += '<b>' + t.guessedRight + ' of ' + t.guessed + '</b> guessed which poem the AI wrote (' + pct(t.guessedRight, t.guessed) + '%). ';
+  if (t.aiAfter == null) txt += 'No second ratings yet, so there is no before and after.';
+  else txt += 'Based on the ' + t.ratedBoth + ' who rated both times.';
+  line.innerHTML = txt;
+  body.appendChild(line);
+  body.appendChild(toggleRow(st.authors ? [['guess', 'guesses'], ['poems', 'the poems']] : [['poems', 'the poems']], true));
+
+  if (open.guess && st.authors) {
+    const box = el('div', 'box'); box.style.marginTop = '14px';
+    let html = '<h3>Which poem did the room think the AI wrote?</h3><div class="rows">';
+    ['a', 'b'].forEach((k) => {
+      const c = t.guessCounts[k], p = pct(c, t.guessed);
+      const isAi = st.authors.ai === k;
+      html += '<div class="row3"><span>Poem ' + k.toUpperCase() + (isAi ? ' (the AI\'s)' : ' (the human\'s)') + '</span>' +
+        '<div class="rt"><div style="width:' + p + '%;background:var(--' + (isAi ? 'ai' : 'human') + ')"></div></div>' +
+        '<span class="rv">' + p + '% <small>· ' + c + '</small></span></div>';
+    });
+    box.innerHTML = html + '</div>';
+    body.appendChild(box);
+  }
+  if (open.poems) { const g = poems(); g.style.marginTop = '14px'; body.appendChild(g); }
+}
+
+// ---- Job audit ----
+function renderHostAudit(poll, st, body) {
+  const t = st.tally;
+  $('hVerb').textContent = 'finished';
+  if (!st.revealed) {
+    votingNote('<b>' + t.total + '</b> finished' + (t.started > t.total ? ', ' + (t.started - t.total) + ' on Round 2' : '') + '. Results are hidden.');
+    body.appendChild(el('div', 'howto',
+      '<div><b>Step 1</b>Pick a career on your phone.</div>' +
+      '<div><b>Round 1</b>Sort its six tasks for today\'s AI: keep it human, do it with AI, or hand it to AI.</div>' +
+      '<div><b>Round 2</b>Sort them again for an AI that does every task as well as the best person in the field.</div>'));
+    return;
+  }
+
+  votingNote(null);
+  $('hContext').classList.add('hidden');
+  $('hQuestion').textContent = 'What did the room refuse to hand over?';
+  if (!t.total) { body.appendChild(el('div', 'takeaway', 'No one has finished both rounds yet.')); return; }
+
+  const grid = el('div', 'statgrid' + (anyOpen() ? ' compact' : ''));
+  const block = (label, a, b, sub) => {
+    const d = Math.round((b - a) * 10) / 10;
+    return el('div', 'stat', '<div class="slabel">' + label + '</div><div class="snums">' +
+      '<span class="big was">' + a.toFixed(1) + '</span><span class="arrow">→</span><span class="big">' + b.toFixed(1) + '</span>' +
+      '<span class="delta">' + signed(d) + '</span></div><div class="ssub">' + sub + '</div>');
+  };
+  grid.appendChild(block('Handed to AI', t.ai1, t.ai2, "Average tasks out of 6: today's AI, then a perfect AI"));
+  grid.appendChild(block('Kept fully human', t.human1, t.human2, "Average tasks out of 6: today's AI, then a perfect AI"));
+  body.appendChild(grid);
+
+  const line = el('div', 'takeaway');
+  line.style.marginTop = '14px';
+  line.innerHTML = 'On average <b>' + t.moved.toFixed(1) + ' of 6</b> tasks moved toward AI between rounds. What moved was a judgment about what AI can do. What stayed is a judgment about what matters. <span style="color:var(--muted)">(' + t.total + ' students)</span>';
+  if (!anyOpen()) body.appendChild(line);
+  body.appendChild(toggleRow([['goods', 'goods of work'], ['reasons', 'reasons'], ['framings', 'three framings'], ['tasks', 'tasks']], true));
+
+  if (open.goods) {
+    const box = el('div', 'box'); box.style.marginTop = '14px';
+    let html = '<h3>Tasks that still have a human on them, by the good of work they serve (perfect AI)</h3><div class="rows">';
+    t.goods.forEach((g) => {
+      if (!g.tasks) return;
+      html += '<div class="row3"><span>' + esc(g.label) + '</span>' +
+        '<div class="rt"><div style="width:' + g.kept2 + '%;background:' + (g.id ? 'var(--good)' : 'var(--muted)') + '"></div></div>' +
+        '<span class="rv">' + g.kept2 + '% <small>was ' + g.kept1 + '%</small></span></div>';
+    });
+    html += '</div><div class="caption">A task counts as kept if the student chose "Keep it human" or "Do it with AI." The smaller number is Round 1.</div>';
+    box.innerHTML = html;
+    body.appendChild(box);
+  }
+
+  if (open.reasons) {
+    const box = el('div', 'box'); box.style.marginTop = '14px';
+    let html = '<h3>Why keep the task you would fight hardest for?</h3><div class="rows">';
+    poll.reasons.forEach((r, i) => {
+      const c = t.reasons[r.id] || 0, p = pct(c, t.reasonTotal);
+      html += '<div class="row3"><span>' + esc(r.label) + '</span>' +
+        '<div class="rt"><div style="width:' + p + '%;background:' + MULTI_COLORS[i % MULTI_COLORS.length] + '"></div></div>' +
+        '<span class="rv">' + p + '% <small>· ' + c + '</small></span></div>';
+    });
+    html += '</div>' + (t.keptNothing ? '<div class="caption">' + t.keptNothing + ' handed every task to the perfect AI and kept nothing.</div>' : '');
+    box.innerHTML = html;
+    body.appendChild(box);
+  }
+
+  if (open.framings) {
+    const f = t.framings;
+    const box = el('div', 'box'); box.style.marginTop = '14px';
+    const row = (label, v, color, strong) => '<div class="row3"><span' + (strong ? ' style="font-weight:800"' : '') + '>' + label + '</span>' +
+      '<div class="rt"><div style="width:' + v + '%;background:' + color + '"></div></div><span class="rv">' + v + '%</span></div>';
+    box.innerHTML = '<h3>Share of these tasks handed to a perfect AI, depending on what you are aiming at</h3><div class="rows">' +
+      row('Maximize productivity', f.productivity, '#d7263d') +
+      row('Minimize liability', f.liability, '#e0a13a') +
+      row('Preserve meaningful work', f.meaning, '#2f9e44') +
+      row('This class', f.class2, 'var(--accent)', true) +
+      '</div><div class="caption">Productivity hands over everything. Liability keeps a human only where someone has to answer for the outcome. Meaningful work keeps every task that serves one of the four goods of work.</div>';
+    body.appendChild(box);
+  }
+
+  if (open.tasks) {
+    const box = el('div', 'box'); box.style.marginTop = '14px';
+    const list = (rows) => '<div class="tasklist">' + rows.map((r) =>
+      '<div><span>' + esc(r.text) + ' <small>· ' + esc(r.career) + '</small></span><b>' + r.kept + ' of ' + r.n + '</b></div>').join('') + '</div>';
+    box.innerHTML = '<div class="twocol"><div><h3>Most often kept (perfect AI)</h3>' + list(t.mostKept) + '</div>' +
+      '<div><h3>Most often handed over</h3>' + list(t.leastKept) + '</div></div>' +
+      '<div class="caption">Counts are students who kept a human on the task, out of those who chose that career. Careers chosen: ' +
+      t.careers.map((c) => esc(c.label) + ' ' + c.n).join(', ') + '.</div>';
+    body.appendChild(box);
+  }
+}
+
+// =====================================================================
+// STUDENT
+// =====================================================================
+let myVote = null;
+let currentPoll = null;
+let pStep = 0;        // poems: which step the presenter is on
+let pAuthors = null;  // poems: authorship, once revealed
+let pRevealed = false;
+let auditPhase = 'career';
+let draft = {};
+
+function showWaiting() {
+  $('pWaiting').classList.remove('hidden');
+  $('pPollWrap').classList.add('hidden');
+  $('pBody').classList.remove('scroll');
+}
+function setStatus(cls, text) {
+  const s = $('pStatus');
+  s.className = 'status' + (cls ? ' ' + cls : '');
+  s.textContent = text || '';
+}
+
+function renderParticipantPoll(active) {
+  const samePoll = currentPoll && active.poll && currentPoll.id === active.poll.id;
+  currentPoll = active.poll;
+  myVote = active.myVote || null;
+  pRevealed = !!active.revealed;
+  pStep = active.step || 0;
+  pAuthors = active.authors || null;
+  $('pWaiting').classList.add('hidden');
+  $('pPollWrap').classList.remove('hidden');
+  $('pContext').textContent = currentPoll.context || '';
+  $('pContext').classList.toggle('hidden', !currentPoll.context);
+  $('pQuestion').textContent = currentPoll.question;
+  const long = currentPoll.kind === 'poems' || currentPoll.kind === 'audit';
+  $('pBody').classList.toggle('scroll', long);
+  if (!samePoll) window.scrollTo(0, 0);
+
+  if (currentPoll.kind === 'poems') { draft = {}; return buildPoems(); }
+  if (currentPoll.kind === 'audit') {
+    // A phone that reconnects mid-audit keeps what the student has entered so
+    // far. Only a new question or a presenter reset starts it over.
+    const keep = samePoll && !active.reset && draft.career && auditPhase !== 'done';
+    if (!keep) {
+      draft = {};
+      auditPhase = myVote && myVote.r2 ? 'done' : myVote && myVote.r1 ? 'r2' : 'career';
+      if (myVote) { draft.career = myVote.career; draft.r1 = myVote.r1.slice(); }
+    }
+    return buildAudit();
+  }
+  buildOptions(active.revealed ? active.tally : null);
+  if (active.revealed) setStatus('', 'Results are on the shared screen.');
+  else if (myVote) setStatus('ok', '✓ Vote recorded. Tap another answer to change it.');
+  else setStatus('', 'Tap your answer.');
+}
+
+// ---- Ordinary polls ----
+function buildOptions(revealTally) {
+  const wrap = $('pOptions');
+  wrap.innerHTML = '';
+  const total = revealTally ? revealTally.total : 0;
+  currentPoll.options.forEach((o) => {
+    const b = el('button', 'opt' + (myVote === o.id ? ' chosen' : ''));
+    let right = '<span class="tick">✓</span>';
+    if (revealTally) right = '<span class="rpct">' + pct((revealTally.counts && revealTally.counts[o.id]) || 0, total) + '%</span>';
+    b.innerHTML = '<span>' + esc(o.label) + '</span>' + right;
+    b.onclick = () => {
+      if (pRevealed) return;
+      myVote = o.id;
+      socket.emit('participant:vote', { pollId: currentPoll.id, optionId: o.id });
+      Array.from(wrap.children).forEach((c, i) => c.classList.toggle('chosen', currentPoll.options[i].id === o.id));
+      setStatus('ok', '✓ Vote recorded. Tap another answer to change it.');
+    };
+    wrap.appendChild(b);
+  });
+}
+
+// ---- Poems ----
+function slider(key, startVal) {
+  const box = document.createElement('div');
+  const val = el('div', 'sval');
+  const inp = document.createElement('input');
+  inp.type = 'range'; inp.min = 1; inp.max = 10; inp.step = 1;
+  if (startVal != null) draft[key] = startVal;
+  inp.className = 'srange' + (draft[key] === undefined ? ' unset' : '');
+  inp.value = draft[key] !== undefined ? draft[key] : 5;
+  const showVal = () => {
+    val.textContent = draft[key] === undefined ? 'Drag to rate' : draft[key] + ' / 10';
+    val.classList.toggle('unset', draft[key] === undefined);
+  };
+  // Any touch counts, so a student who wants the middle value can tap it.
+  const setIt = () => { draft[key] = Number(inp.value); inp.classList.remove('unset'); showVal(); if (slider.onChange) slider.onChange(); };
+  inp.oninput = setIt; inp.onchange = setIt; inp.onpointerup = setIt; inp.ontouchend = setIt;
+  showVal();
+  const ends = el('div', 'sends', '<span>1 · Poor</span><span>10 · Excellent</span>');
+  box.appendChild(val); box.appendChild(inp); box.appendChild(ends);
+  return box;
+}
+
+function buildPoems() {
+  const wrap = $('pOptions');
+  wrap.innerHTML = '';
+  const rec = myVote || {};
+  const rating = pRevealed ? null : pStep === 0 ? 'r1' : pStep === 2 ? 'r2' : null;
+
+  $('pQuestion').textContent = pRevealed ? 'Results are on the shared screen.'
+    : ['Rate each poem from 1 to 10.', 'One of these poems was written by an AI. Which one?', 'Now that you know who wrote them, rate each poem again.'][pStep];
+
+  ['a', 'b'].forEach((k) => {
+    const card = el('div', 'pcard', '<h4>Poem ' + k.toUpperCase() + '</h4>' + poemHtml(currentPoll.poems[k].text));
+    if (pAuthors) {
+      const isAi = pAuthors.ai === k;
+      card.appendChild(el('div', 'author ' + (isAi ? 'ai' : 'human'), '<span class="tag ' + (isAi ? 'ai' : 'human') + '">' + (isAi ? 'AI' : 'Human') + '</span>' + esc(pAuthors[k])));
+    }
+    if (rating) {
+      const saved = rec[rating] ? rec[rating][k] : undefined;
+      if (rating === 'r2' && rec.r1) card.appendChild(el('div', 'pwas', 'You gave this a ' + rec.r1[k] + ' before.'));
+      if (rating === 'r2' && rec.r1) card.lastChild.style.margin = '10px 0 0';
+      card.appendChild(slider(k, saved));
+    }
+    wrap.appendChild(card);
+  });
+
+  if (pRevealed) {
+    let txt = '';
+    if (rec.guess && pAuthors) txt += rec.guess === pAuthors.ai ? 'You guessed right about which poem the AI wrote. ' : 'You guessed wrong about which poem the AI wrote. ';
+    if (rec.r1 && rec.r2 && pAuthors) {
+      const ai = pAuthors.ai, hu = ai === 'a' ? 'b' : 'a';
+      txt += "Your rating of the AI's poem went from " + rec.r1[ai] + ' to ' + rec.r2[ai] + ", and the human's from " + rec.r1[hu] + ' to ' + rec.r2[hu] + '.';
+    }
+    setStatus('', txt);
+    return;
+  }
+
+  if (rating) {
+    const btn = el('button', 'btn');
+    const refresh = () => {
+      const ready = draft.a !== undefined && draft.b !== undefined;
+      const saved = rec[rating] && rec[rating].a === draft.a && rec[rating].b === draft.b;
+      btn.disabled = !ready;
+      btn.textContent = !ready ? 'Rate both poems' : saved ? '✓ Ratings saved' : rec[rating] ? 'Update my ratings' : 'Submit my ratings';
+      if (saved) setStatus('ok', 'Saved. You can change a rating and submit again. Waiting for the presenter…');
+      else setStatus('', '');
+    };
+    slider.onChange = refresh;
+    btn.onclick = () => {
+      if (draft.a === undefined || draft.b === undefined) return;
+      socket.emit('participant:vote', { pollId: currentPoll.id, part: rating, a: draft.a, b: draft.b });
+    };
+    wrap.appendChild(btn);
+    refresh();
+    return;
+  }
+
+  // Step 1: guess which poem the AI wrote.
+  slider.onChange = null;
+  const row = el('div', 'options');
+  ['a', 'b'].forEach((k) => {
+    const b = el('button', 'opt' + (rec.guess === k ? ' chosen' : ''), '<span>Poem ' + k.toUpperCase() + ' was written by the AI</span><span class="tick">✓</span>');
+    b.onclick = () => socket.emit('participant:vote', { pollId: currentPoll.id, part: 'guess', pick: k });
+    row.appendChild(b);
+  });
+  wrap.appendChild(row);
+  if (rec.guess) setStatus('ok', '✓ Guess recorded. Tap the other poem to change it. Waiting for the presenter…');
+  else setStatus('', 'Tap your guess.');
+}
+
+// ---- Job audit ----
+function career() { return currentPoll.careers.find((c) => c.id === draft.career); }
+function sortLabel(id) { const s = currentPoll.sorts.find((x) => x.id === id); return s ? s.label : ''; }
+
+function sortCards(wrap, key, onChange) {
+  const c = career();
+  c.tasks.forEach((text, i) => {
+    const card = el('div', 'pcard');
+    const t = el('div', 'ptask'); t.textContent = text; card.appendChild(t);
+    if (key === 'r2' && draft.r1) card.appendChild(el('div', 'pwas', 'Round 1: ' + esc(sortLabel(draft.r1[i]))));
+    const chips = el('div', 'chips three');
+    currentPoll.sorts.forEach((s) => {
+      const b = el('button', 'chip' + (draft[key][i] === s.id ? ' chosen' : ''));
+      b.textContent = s.label;
+      b.onclick = () => {
+        draft[key][i] = s.id;
+        Array.from(chips.children).forEach((x, j) => x.classList.toggle('chosen', currentPoll.sorts[j].id === s.id));
+        onChange();
+      };
+      chips.appendChild(b);
+    });
+    card.appendChild(chips);
+    wrap.appendChild(card);
+  });
+}
+
+function buildAudit() {
+  const wrap = $('pOptions');
+  wrap.innerHTML = '';
+  setStatus('', '');
+  $('pContext').classList.add('hidden');
+
+  if (pRevealed && !(myVote && myVote.r2)) {
+    $('pQuestion').textContent = 'Results are on the shared screen.';
+    return;
+  }
+
+  if (auditPhase === 'career') {
+    $('pQuestion').textContent = 'Pick a career.';
+    currentPoll.careers.forEach((c) => {
+      const b = el('button', 'opt'); b.innerHTML = '<span>' + esc(c.label) + '</span><span>›</span>';
+      b.onclick = () => {
+        draft = { career: c.id, r1: new Array(c.tasks.length).fill(null) };
+        auditPhase = 'r1'; buildAudit(); window.scrollTo(0, 0);
+      };
+      wrap.appendChild(b);
+    });
+    return;
+  }
+
+  if (auditPhase === 'r1') {
+    $('pQuestion').textContent = career().label;
+    wrap.appendChild(el('div', 'banner', esc(currentPoll.round1)));
+    const btn = el('button', 'btn');
+    const refresh = () => {
+      const n = draft.r1.filter(Boolean).length;
+      btn.disabled = n < draft.r1.length;
+      btn.textContent = btn.disabled ? 'Sort every task (' + n + ' of ' + draft.r1.length + ')' : 'Continue to Round 2';
+    };
+    sortCards(wrap, 'r1', refresh);
+    btn.onclick = () => {
+      socket.emit('participant:vote', { pollId: currentPoll.id, part: 'r1', career: draft.career, sort: draft.r1 });
+      draft.r2 = new Array(draft.r1.length).fill(null); draft.keepTask = null; draft.reason = null;
+      auditPhase = 'r2'; buildAudit(); window.scrollTo(0, 0);
+    };
+    wrap.appendChild(btn);
+    const back = el('button', 'linkish'); back.textContent = '← Pick a different career';
+    back.onclick = () => { auditPhase = 'career'; buildAudit(); window.scrollTo(0, 0); };
+    wrap.appendChild(back);
+    refresh();
+    return;
+  }
+
+  if (auditPhase === 'r2') {
+    $('pQuestion').textContent = career().label;
+    if (!draft.r2) {
+      draft.r2 = myVote && myVote.r2 ? myVote.r2.slice() : new Array(draft.r1.length).fill(null);
+      draft.keepTask = myVote ? myVote.keepTask : null;
+      draft.reason = myVote ? myVote.reason : null;
+    }
+    wrap.appendChild(el('div', 'banner', esc(currentPoll.round2)));
+    const extra = el('div', 'options');
+    const btn = el('button', 'btn');
+    const refresh = () => {
+      const n = draft.r2.filter(Boolean).length;
+      const all = n === draft.r2.length;
+      const kept = draft.r2.map((s, i) => (s && s !== 'ai' ? i : -1)).filter((i) => i >= 0);
+      if (!kept.includes(draft.keepTask)) draft.keepTask = kept.length === 1 && all ? kept[0] : null;
+      extra.innerHTML = '';
+      if (all && kept.length) {
+        const q1 = el('div', 'pcard');
+        q1.appendChild(el('div', 'plabel', 'Which task would you fight hardest to keep?'));
+        const chips = el('div', 'chips'); chips.style.marginTop = '10px';
+        kept.forEach((i) => {
+          const b = el('button', 'chip' + (draft.keepTask === i ? ' chosen' : '')); b.textContent = career().tasks[i];
+          b.onclick = () => { draft.keepTask = i; refresh(); };
+          chips.appendChild(b);
+        });
+        q1.appendChild(chips); extra.appendChild(q1);
+        const q2 = el('div', 'pcard');
+        q2.appendChild(el('div', 'plabel', 'Why keep it, if the AI would do it perfectly?'));
+        const chips2 = el('div', 'chips'); chips2.style.marginTop = '10px';
+        currentPoll.reasons.forEach((r) => {
+          const b = el('button', 'chip' + (draft.reason === r.id ? ' chosen' : '')); b.textContent = r.label;
+          b.onclick = () => { draft.reason = r.id; refresh(); };
+          chips2.appendChild(b);
+        });
+        q2.appendChild(chips2); extra.appendChild(q2);
+      }
+      const ready = all && (!kept.length || (draft.keepTask !== null && draft.reason));
+      btn.disabled = !ready;
+      btn.textContent = !all ? 'Sort every task (' + n + ' of ' + draft.r2.length + ')'
+        : !ready ? 'Answer the two questions above' : 'Submit my audit';
+    };
+    sortCards(wrap, 'r2', refresh);
+    wrap.appendChild(extra);
+    btn.onclick = () => {
+      socket.emit('participant:vote', { pollId: currentPoll.id, part: 'r2', sort: draft.r2, keepTask: draft.keepTask, reason: draft.reason });
+    };
+    wrap.appendChild(btn);
+    refresh();
+    return;
+  }
+
+  // Done: the student's own result.
+  const v = myVote;
+  const c = currentPoll.careers.find((x) => x.id === v.career);
+  const rank = { human: 0, with: 1, ai: 2 };
+  const n1 = v.r1.filter((s) => s === 'ai').length, n2 = v.r2.filter((s) => s === 'ai').length;
+  const moved = c.tasks.filter((_, i) => rank[v.r2[i]] > rank[v.r1[i]]);
+  const kept = c.tasks.filter((_, i) => v.r2[i] !== 'ai');
+  const li = (xs) => '<ul>' + xs.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+  $('pQuestion').textContent = 'Your audit: ' + c.label;
+  wrap.appendChild(el('div', 'pcard psum',
+    'You handed <b>' + n1 + ' of ' + c.tasks.length + '</b> tasks to today\'s AI, and <b>' + n2 + ' of ' + c.tasks.length + '</b> to a perfect AI.'));
+  wrap.appendChild(el('div', 'pcard psum', moved.length
+    ? '<b>Moved toward AI between rounds.</b> These were judgments about what AI can do:' + li(moved)
+    : '<b>Nothing moved toward AI between rounds.</b> Your answers did not depend on what AI can do.'));
+  wrap.appendChild(el('div', 'pcard psum', kept.length
+    ? '<b>Still has a human on it, even with a perfect AI.</b> These are judgments about what matters:' + li(kept)
+    : '<b>You handed everything to the perfect AI.</b>'));
+  if (!pRevealed) {
+    const edit = el('button', 'btn secondary'); edit.textContent = 'Change my Round 2 answers';
+    edit.onclick = () => { draft.r2 = null; auditPhase = 'r2'; buildAudit(); window.scrollTo(0, 0); };
+    wrap.appendChild(edit);
+    setStatus('ok', '✓ Submitted. Waiting for the presenter…');
+  } else setStatus('', 'Results are on the shared screen.');
+}
+
+socket.on('participant:poll', (data) => { if (data) renderParticipantPoll(data); else showWaiting(); });
+
+socket.on('participant:voteAck', (d) => {
+  if (!currentPoll || d.pollId !== currentPoll.id) return;
+  myVote = d.myVote;
+  if (currentPoll.kind === 'poems') { buildPoems(); return; }
+  if (currentPoll.kind === 'audit') {
+    if (myVote.r2) { auditPhase = 'done'; buildAudit(); window.scrollTo(0, 0); }
+    return;
+  }
+});
+
+socket.on('participant:step', (d) => {
+  if (!currentPoll || d.pollId !== currentPoll.id) return;
+  pStep = d.step;
+  pAuthors = d.authors || null;
+  draft = {};
+  buildPoems();
+  window.scrollTo(0, 0);
+});
+
+socket.on('participant:revealed', (d) => {
+  if (!currentPoll || currentPoll.id !== d.pollId) return;
+  pRevealed = true;
+  if (currentPoll.kind === 'poems') { buildPoems(); return; }
+  if (currentPoll.kind === 'audit') { if (myVote && myVote.r2) auditPhase = 'done'; buildAudit(); return; }
+  buildOptions(d.tally);
+  setStatus('', 'Results are on the shared screen.');
+});
+
+// =====================================================================
+// RECONNECT (presenter or student refresh)
+// =====================================================================
+socket.on('connect', () => {
+  let role, code;
+  try { role = sessionStorage.getItem('pw_role'); code = sessionStorage.getItem('pw_code'); } catch (e) {}
+  if (!role || !code) return;
+  if (role === 'host') {
+    socket.emit('host:resume', { code }, (res) => {
+      if (!res || res.error) { clearSession(); return; }
+      POLLS = res.polls; roomCode = code;
+      setupHost(code);
+    });
+  } else if (role === 'vote') {
+    socket.emit('participant:join', { code, voterId }, (res) => {
+      if (!res || res.error) { clearSession(); return; }
+      roomCode = code; $('pCode').textContent = code; show('part');
+      if (res.active) renderParticipantPoll(res.active); else showWaiting();
+    });
+  }
+});
+</script>
+</body>
+</html>
