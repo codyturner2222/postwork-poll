@@ -194,19 +194,6 @@ const POLLS = [
     note: 'What would you do instead? Which parts of the job would you miss?',
   },
   {
-    id: 'tenmil',
-    section: 'Opening',
-    kind: 'multiple',
-    context: 'On your 22nd birthday you receive $10 million, tax-free.',
-    question: "Do you still pursue the career you're planning now?",
-    options: [
-      { id: 'same', label: 'Yes, the same career' },
-      { id: 'other', label: "I'd work, but at something else" },
-      { id: 'none', label: "I wouldn't work" },
-    ],
-    note: "O'Brien compares total automation to retiring at 20 after winning the lottery.",
-  },
-  {
     id: 'audit',
     section: 'Job audit',
     kind: 'audit',
@@ -217,6 +204,19 @@ const POLLS = [
     round2:
       'Round 2: now the AI does every one of these as well as the best person in your field, reliably, for free. For each task, keep a human on it or hand it over.',
     note: "Everything you kept in Round 2, you would be doing the slow way on purpose. O'Brien says that makes it a game. Do you agree?",
+  },
+  {
+    id: 'stakes',
+    section: 'Job audit',
+    kind: 'binary',
+    context:
+      'Procedural work lays out the steps for you to follow. Open-ended work has no set procedure and calls for judgment. Suppose AI does open-ended work better than we do.',
+    question: 'Where is the case for keeping humans doing it stronger?',
+    options: [
+      { id: 'low', label: 'In low-stakes work' },
+      { id: 'high', label: 'In high-stakes work' },
+    ],
+    note: 'Low stakes: the outcome matters less, so we can afford to keep humans. High stakes: that work is the most meaningful, and someone has to be accountable.',
   },
   {
     id: 'exploit',
@@ -231,33 +231,30 @@ const POLLS = [
     note: 'If it is not free, is the offer exploitative? Compare the rich person offering $1,000 to someone who is starving.',
   },
   {
-    id: 'champ1',
+    id: 'sci1',
     section: 'Work or game?',
     kind: 'binary',
     context:
-      'One person becomes the world chess champion. Another is a scientist whose career produces one solid but forgettable discovery.',
-    question: 'Which life has more meaning?',
+      'Two scientists each spend ten years making the same important medical discovery. For the first, no AI could have made it. For the second, an AI could have made it in seconds, but she chose to do the research herself.',
+    question: "Was the second scientist's achievement less meaningful?",
     options: [
-      { id: 'champ', label: 'The chess champion' },
-      { id: 'sci', label: 'The scientist' },
+      { id: 'yes', label: 'Yes, less meaningful' },
+      { id: 'no', label: 'No, just as meaningful' },
     ],
-    note: "O'Brien grants that the champion's achievement might count for more than a middling paper.",
+    note: "O'Brien says yes: once the AI could do it, doing it yourself is choosing the slow way on purpose.",
   },
   {
-    id: 'champ2',
+    id: 'sci2',
     section: 'Work or game?',
     kind: 'binary',
     stageLabel: 'The twist',
-    context:
-      "Same two lives. Now suppose an AI could have made the scientist's discovery in seconds, and she knew it.",
-    question: 'Which life has more meaning now?',
+    context: 'Her choice delayed a treatment that would have saved thousands of lives.',
+    question: 'Was she wrong to do the research herself?',
     options: [
-      { id: 'champ', label: 'The chess champion' },
-      { id: 'sci', label: 'The scientist' },
+      { id: 'yes', label: 'Yes, she should have used the AI' },
+      { id: 'no', label: 'No, the work was hers to do' },
     ],
-    compareWith: 'champ1',
-    compareLabels: ['Before the twist', 'After the twist'],
-    note: "If the room moved toward the champion, it agrees with O'Brien that AI turns the scientist's work into a game.",
+    note: 'Is preserving meaningful human work worth the cost to others? This is the closing poll in miniature.',
   },
   {
     id: 'poems',
