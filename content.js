@@ -203,7 +203,7 @@ const POLLS = [
     round1: "Round 1: today's AI. Sort each task.",
     round2:
       'Round 2: now the AI does every one of these as well as the best person in your field, reliably, for free. For each task, keep a human on it or hand it over.',
-    note: "Everything you kept in Round 2, you would be doing the slow way on purpose. O'Brien says that makes it a game. Do you agree?",
+    note: "Everything you kept in Round 2, you would be doing the slow way on purpose. O'Brien would say that turns it into a game. Do you agree?",
   },
   {
     id: 'stakes',
@@ -285,13 +285,14 @@ const POLLS = [
     id: 'slow',
     section: 'Closing',
     kind: 'binary',
-    question:
-      'Should we slow AI down to preserve meaningful human work, or speed it up to reach a world of abundance sooner?',
+    context:
+      'Suppose slowing AI development by 15 years would preserve meaningful human work, but delay major medical discoveries and the elimination of poverty.',
+    question: 'Would you support slowing it down?',
     options: [
-      { id: 'slow', label: 'Slow it down' },
-      { id: 'fast', label: 'Speed it up' },
+      { id: 'slow', label: 'Yes, slow it down' },
+      { id: 'fast', label: "No, don't slow it down" },
     ],
-    note: "O'Brien favors patience, even with the moral and economic costs of waiting.",
+    note: "O'Brien does not say which course is better. He argues that the loss of meaningful work is a reason for patience, to weigh against the costs of waiting.",
   },
   {
     id: 'dream2',
