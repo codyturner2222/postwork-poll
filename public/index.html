@@ -240,6 +240,8 @@
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chips.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .chips.three .chip { padding: 11px 2px; font-size: 13.5px; text-align: center; white-space: nowrap; }
+  .chips.two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .chips.two .chip { padding: 12px 4px; font-size: 15px; text-align: center; white-space: nowrap; }
   .chip { padding: 11px 13px; font-size: 15px; font-weight: 600; border-radius: 999px; border: 2px solid var(--line); background: var(--panel2); color: var(--ink); }
   .chip.chosen { border-color: var(--accent); background: rgba(110,168,254,0.2); }
   .banner { background: rgba(224,161,58,0.14); border: 1px solid var(--warn); color: #f4e9d4; border-radius: 12px; padding: 12px 14px; font-size: 16px; line-height: 1.4; font-weight: 600; }
@@ -720,7 +722,7 @@ function renderHostAudit(poll, st, body) {
     body.appendChild(el('div', 'howto',
       '<div><b>Step 1</b>Pick a career on your phone.</div>' +
       '<div><b>Round 1</b>Sort its six tasks for today\'s AI: keep it human, do it with AI, or hand it to AI.</div>' +
-      '<div><b>Round 2</b>Sort them again for an AI that does every task as well as the best person in the field.</div>'));
+      '<div><b>Round 2</b>Now the AI does every task as well as the best person in the field. Keep a human on it, or hand it over.</div>'));
     return;
   }
 
@@ -737,12 +739,14 @@ function renderHostAudit(poll, st, body) {
       '<span class="delta">' + signed(d) + '</span></div><div class="ssub">' + sub + '</div>');
   };
   grid.appendChild(block('Handed to AI', t.ai1, t.ai2, "Average tasks out of 6: today's AI, then a perfect AI"));
-  grid.appendChild(block('Kept fully human', t.human1, t.human2, "Average tasks out of 6: today's AI, then a perfect AI"));
+  grid.appendChild(el('div', 'stat', '<div class="slabel">Still kept human, with a perfect AI</div><div class="snums">' +
+    '<span class="big">' + t.human2.toFixed(1) + '</span><span class="arrow">of 6</span></div>' +
+    '<div class="ssub">' + t.keptAny + ' of ' + t.total + ' students kept at least one task</div>'));
   body.appendChild(grid);
 
   const line = el('div', 'takeaway');
   line.style.marginTop = '14px';
-  line.innerHTML = 'On average <b>' + t.moved.toFixed(1) + ' of 6</b> tasks moved toward AI between rounds. What moved was a judgment about what AI can do. What stayed is a judgment about what matters. <span style="color:var(--muted)">(' + t.total + ' students)</span>';
+  line.innerHTML = 'On average <b>' + t.moved.toFixed(1) + ' of 6</b> tasks were handed over only once the AI was perfect. What moved was a judgment about what AI can do. What stayed is a judgment about what matters. <span style="color:var(--muted)">(' + t.total + ' students)</span>';
   if (!anyOpen()) body.appendChild(line);
   body.appendChild(toggleRow([['goods', 'goods of work'], ['reasons', 'reasons'], ['framings', 'three framings'], ['tasks', 'tasks']], true));
 
@@ -755,7 +759,7 @@ function renderHostAudit(poll, st, body) {
         '<div class="rt"><div style="width:' + g.kept2 + '%;background:' + (g.id ? 'var(--good)' : 'var(--muted)') + '"></div></div>' +
         '<span class="rv">' + g.kept2 + '% <small>was ' + g.kept1 + '%</small></span></div>';
     });
-    html += '</div><div class="caption">A task counts as kept if the student chose "Keep it human" or "Do it with AI." The smaller number is Round 1.</div>';
+    html += '</div><div class="caption">The bar is Round 2: the share of these tasks students kept a human on. The smaller number is Round 1, where "Do it with AI" also counts as kept.</div>';
     box.innerHTML = html;
     body.appendChild(box);
   }
@@ -977,13 +981,15 @@ function sortCards(wrap, key, onChange) {
     const card = el('div', 'pcard');
     const t = el('div', 'ptask'); t.textContent = text; card.appendChild(t);
     if (key === 'r2' && draft.r1) card.appendChild(el('div', 'pwas', 'Round 1: ' + esc(sortLabel(draft.r1[i]))));
-    const chips = el('div', 'chips three');
-    currentPoll.sorts.forEach((s) => {
+    // Round 2 is a forced choice between two options.
+    const sorts = key === 'r2' ? currentPoll.sorts2 : currentPoll.sorts;
+    const chips = el('div', 'chips ' + (sorts.length === 2 ? 'two' : 'three'));
+    sorts.forEach((s) => {
       const b = el('button', 'chip' + (draft[key][i] === s.id ? ' chosen' : ''));
       b.textContent = s.label;
       b.onclick = () => {
         draft[key][i] = s.id;
-        Array.from(chips.children).forEach((x, j) => x.classList.toggle('chosen', currentPoll.sorts[j].id === s.id));
+        Array.from(chips.children).forEach((x, j) => x.classList.toggle('chosen', sorts[j].id === s.id));
         onChange();
       };
       chips.appendChild(b);
@@ -1094,17 +1100,16 @@ function buildAudit() {
   // Done: the student's own result.
   const v = myVote;
   const c = currentPoll.careers.find((x) => x.id === v.career);
-  const rank = { human: 0, with: 1, ai: 2 };
   const n1 = v.r1.filter((s) => s === 'ai').length, n2 = v.r2.filter((s) => s === 'ai').length;
-  const moved = c.tasks.filter((_, i) => rank[v.r2[i]] > rank[v.r1[i]]);
+  const moved = c.tasks.filter((_, i) => v.r1[i] !== 'ai' && v.r2[i] === 'ai');
   const kept = c.tasks.filter((_, i) => v.r2[i] !== 'ai');
   const li = (xs) => '<ul>' + xs.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>';
   $('pQuestion').textContent = 'Your audit: ' + c.label;
   wrap.appendChild(el('div', 'pcard psum',
     'You handed <b>' + n1 + ' of ' + c.tasks.length + '</b> tasks to today\'s AI, and <b>' + n2 + ' of ' + c.tasks.length + '</b> to a perfect AI.'));
   wrap.appendChild(el('div', 'pcard psum', moved.length
-    ? '<b>Moved toward AI between rounds.</b> These were judgments about what AI can do:' + li(moved)
-    : '<b>Nothing moved toward AI between rounds.</b> Your answers did not depend on what AI can do.'));
+    ? '<b>Handed over only once the AI was perfect.</b> These were judgments about what AI can do:' + li(moved)
+    : '<b>Nothing new went to the perfect AI.</b> Your answers did not depend on what AI can do.'));
   wrap.appendChild(el('div', 'pcard psum', kept.length
     ? '<b>Still has a human on it, even with a perfect AI.</b> These are judgments about what matters:' + li(kept)
     : '<b>You handed everything to the perfect AI.</b>'));

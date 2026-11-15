@@ -25,8 +25,9 @@ const GOODS = [
 //         it is plain drudgery
 //   liab  true if someone has to answer for the outcome (used by the
 //         "minimize liability" framing)
-// Aim for one obvious hand-off, at most one obvious keep, and the rest in the
-// gray zone, where efficiency pulls against something else.
+// Aim for one obvious hand-off and the rest in the gray zone, where efficiency
+// pulls against something else. With about twenty students, five careers keeps
+// enough people on each one for the task-by-task view to mean something.
 const CAREERS = [
   {
     id: 'accountant',
@@ -61,19 +62,7 @@ const CAREERS = [
       { text: 'Write the ad copy', good: 'excellence', liab: false },
       { text: 'Decide whether an edgy ad goes too far', good: 'contribution', liab: true },
       { text: 'Pitch the campaign to the client in person', good: 'recognition', liab: false },
-      { text: 'Take the team out after the launch', good: 'community', liab: false },
-    ],
-  },
-  {
-    id: 'consultant',
-    label: 'Management consultant',
-    tasks: [
-      { text: "Turn the team's notes into a slide deck", good: null, liab: false },
-      { text: "Interview the client's employees about what is going wrong", good: 'excellence', liab: false },
-      { text: 'Work out the recommendation', good: 'excellence', liab: false },
-      { text: 'Tell the CEO her strategy is failing', good: 'contribution', liab: false },
-      { text: 'Recommend which jobs to cut', good: null, liab: true },
-      { text: 'Coach a junior consultant through a first project', good: 'community', liab: false },
+      { text: "Tell a junior designer their work isn't good enough", good: 'community', liab: false },
     ],
   },
   {
@@ -83,77 +72,35 @@ const CAREERS = [
       { text: 'Do the bookkeeping and payroll', good: null, liab: false },
       { text: 'Come up with the product idea', good: 'excellence', liab: false },
       { text: 'Pitch investors for funding', good: 'recognition', liab: false },
+      { text: 'Hire your first ten employees', good: 'community', liab: true },
       { text: 'Decide which early employee to let go', good: null, liab: true },
       { text: 'Answer your first hundred customers yourself', good: 'contribution', liab: false },
-      { text: 'Celebrate the first sale with your co-founder', good: 'community', liab: false },
     ],
   },
   {
-    id: 'engineer',
-    label: 'Software engineer',
+    id: 'manager',
+    label: 'Team manager',
     tasks: [
-      { text: 'Write the tests and documentation', good: null, liab: false },
-      { text: "Design the system's architecture", good: 'excellence', liab: false },
-      { text: 'Write the core code', good: 'excellence', liab: false },
-      { text: "Review a teammate's code", good: 'community', liab: false },
-      { text: 'Decide whether to ship with a known bug', good: 'contribution', liab: true },
-      { text: 'Present your project at the company demo day', good: 'recognition', liab: false },
-    ],
-  },
-  {
-    id: 'lawyer',
-    label: 'Lawyer',
-    tasks: [
-      { text: 'Review ten thousand documents for the case', good: null, liab: false },
-      { text: 'Research the precedents', good: 'excellence', liab: false },
-      { text: 'Write the brief', good: 'excellence', liab: false },
-      { text: 'Argue the case in court', good: 'recognition', liab: true },
-      { text: 'Advise a client whether to take the plea deal', good: 'contribution', liab: true },
-      { text: 'Sit with a client the night before the verdict', good: 'community', liab: false },
-    ],
-  },
-  {
-    id: 'physician',
-    label: 'Physician',
-    tasks: [
-      { text: 'Write the chart notes and insurance forms', good: null, liab: false },
-      { text: 'Read the scan and make the diagnosis', good: 'excellence', liab: true },
-      { text: 'Perform the surgery', good: 'excellence', liab: true },
-      { text: 'Tell a patient the diagnosis is terminal', good: 'contribution', liab: false },
-      { text: 'Decide with a family whether to continue treatment', good: 'contribution', liab: true },
-      { text: 'Teach the residents', good: 'community', liab: false },
-    ],
-  },
-  {
-    id: 'teacher',
-    label: 'Teacher',
-    tasks: [
-      { text: 'Grade the multiple-choice quizzes', good: null, liab: false },
-      { text: 'Design the course', good: 'excellence', liab: false },
-      { text: 'Give the lecture', good: 'recognition', liab: false },
-      { text: 'Grade the essays and write the comments', good: 'contribution', liab: true },
-      { text: 'Write the recommendation letters', good: 'contribution', liab: false },
-      { text: 'Meet with a student who is struggling', good: 'community', liab: false },
-    ],
-  },
-  {
-    id: 'student',
-    label: 'College student',
-    tasks: [
-      { text: 'Format the citations', good: null, liab: false },
-      { text: 'Do the assigned reading', good: 'excellence', liab: false },
-      { text: 'Take notes in lecture', good: 'excellence', liab: false },
-      { text: 'Write the first draft of the paper', good: 'excellence', liab: true },
-      { text: 'Email the professor to ask for an extension', good: null, liab: false },
-      { text: 'Study with your group before the exam', good: 'community', liab: false },
+      { text: 'Build the weekly schedule and approve time off', good: null, liab: false },
+      { text: 'Screen two hundred resumes for an open role', good: null, liab: true },
+      { text: 'Interview the finalists and choose who to hire', good: 'excellence', liab: true },
+      { text: 'Decide who gets the promotion', good: 'contribution', liab: true },
+      { text: 'Tell someone they are being laid off', good: null, liab: false },
+      { text: 'Coach an employee who is struggling', good: 'community', liab: false },
     ],
   },
 ];
 
-// How a student can sort each task.
+// How a student can sort each task in Round 1 (today's AI).
 const SORTS = [
   { id: 'human', label: 'Keep it human' },
   { id: 'with', label: 'Do it with AI' },
+  { id: 'ai', label: 'Hand it to AI' },
+];
+
+// Round 2 (a perfect AI) is a forced choice, with no middle option.
+const SORTS2 = [
+  { id: 'human', label: 'Keep a human on it' },
   { id: 'ai', label: 'Hand it to AI' },
 ];
 
@@ -268,21 +215,20 @@ const POLLS = [
       "Pick a career. Sort its six tasks twice: first for today's AI, then for an AI that does every task as well as the best person in the field.",
     round1: "Round 1: today's AI. Sort each task.",
     round2:
-      'Round 2: now the AI does every one of these as well as the best person in your field, reliably, for free. Sort again.',
+      'Round 2: now the AI does every one of these as well as the best person in your field, reliably, for free. For each task, keep a human on it or hand it over.',
     note: "Everything you kept in Round 2, you would be doing the slow way on purpose. O'Brien says that makes it a game. Do you agree?",
   },
   {
     id: 'exploit',
     section: 'A world without work',
     kind: 'binary',
-    context:
-      'Suppose you would really prefer not to work, but the alternative is going without food or housing. An employer offers you a job, and you take it.',
-    question: 'Is a job offer exploitative when the only alternative is poverty?',
+    context: 'You need a job to afford food and housing. An employer offers you one, and you take it.',
+    question: 'Is taking the job a free choice?',
     options: [
-      { id: 'yes', label: "Yes, you can't freely say no" },
-      { id: 'no', label: 'No, the offer leaves you better off' },
+      { id: 'yes', label: 'Yes, you chose it' },
+      { id: 'no', label: 'No, you had no real alternative' },
     ],
-    note: 'Compare the rich person offering $1,000 to someone who is starving. Is a job offer different?',
+    note: 'If it is not free, is the offer exploitative? Compare the rich person offering $1,000 to someone who is starving.',
   },
   {
     id: 'champ1',
@@ -368,4 +314,4 @@ const POLLS = [
   },
 ];
 
-module.exports = { POLLS, CAREERS, GOODS, SORTS, REASONS };
+module.exports = { POLLS, CAREERS, GOODS, SORTS, SORTS2, REASONS };

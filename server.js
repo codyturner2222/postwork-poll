@@ -8,7 +8,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
-const { POLLS, CAREERS, GOODS, SORTS, REASONS } = require('./content');
+const { POLLS, CAREERS, GOODS, SORTS, SORTS2, REASONS } = require('./content');
 
 const app = express();
 const server = http.createServer(app);
@@ -45,6 +45,7 @@ function clientPoll(p, forHost) {
   if (p.kind === 'audit') {
     out.careers = CAREERS.map((c) => ({ id: c.id, label: c.label, tasks: c.tasks.map((t) => t.text) }));
     out.sorts = SORTS;
+    out.sorts2 = SORTS2;
     out.reasons = REASONS;
     out.round1 = p.round1;
     out.round2 = p.round2;
@@ -186,9 +187,9 @@ function auditTally(votes) {
   const byKept = [...taskRows].sort((x, y) => y.share - x.share || y.n - x.n);
   const careers = CAREERS.map((c) => ({ label: c.label, n: done.filter((v) => v.career === c.id).length })).filter((c) => c.n);
 
-  // How many of a student's tasks moved toward AI between rounds.
-  const rank = { human: 0, with: 1, ai: 2 };
-  const moved = round1(mean(done.map((v) => v.r1.filter((s, i) => rank[v.r2[i]] > rank[s]).length)));
+  // How many of a student's tasks were handed over only once the AI was perfect.
+  const moved = round1(mean(done.map((v) => v.r1.filter((s, i) => s !== 'ai' && v.r2[i] === 'ai').length)));
+  const keptAny = done.filter((v) => v.r2.some((s) => s !== 'ai')).length;
 
   return {
     started: started.length,
@@ -197,6 +198,7 @@ function auditTally(votes) {
     with1: avg('r1', 'with'), with2: avg('r2', 'with'),
     human1: avg('r1', 'human'), human2: avg('r2', 'human'),
     moved,
+    keptAny,
     goods: goodRows,
     framings,
     reasons, reasonTotal, keptNothing,
@@ -415,17 +417,17 @@ io.on('connection', (socket) => {
     }
 
     if (poll.kind === 'audit') {
-      const okSort = (arr, len) =>
-        Array.isArray(arr) && arr.length === len && arr.every((s) => SORTS.some((o) => o.id === s));
+      const okSort = (arr, len, allowed) =>
+        Array.isArray(arr) && arr.length === len && arr.every((s) => allowed.some((o) => o.id === s));
       if (msg.part === 'r1') {
         const career = careerById(msg.career);
-        if (!career || !okSort(msg.sort, career.tasks.length)) return;
+        if (!career || !okSort(msg.sort, career.tasks.length, SORTS)) return;
         // Changing career or Round 1 answers starts the student's audit over.
         mine[voter] = { career: career.id, r1: msg.sort, r2: null, keepTask: null, reason: null };
       } else if (msg.part === 'r2') {
         const rec = mine[voter];
         const career = rec && careerById(rec.career);
-        if (!career || !okSort(msg.sort, career.tasks.length)) return;
+        if (!career || !okSort(msg.sort, career.tasks.length, SORTS2)) return;
         const keptIdx = msg.sort.map((s, i) => (s !== 'ai' ? i : -1)).filter((i) => i >= 0);
         let keepTask = null, reason = null;
         if (keptIdx.length) {
